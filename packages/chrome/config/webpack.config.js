@@ -20,7 +20,12 @@ const commonConfig = ({ publicPath, noHash }) => ({
       'react-router-dom': path.resolve(__dirname, './react-router-dom-externals.js'),
       PFReactCore: path.resolve(__dirname, './patternfly-react-externals.js'),
     },
-    fallback: { stream: false, zlib: false },
+    fallback: {
+      path: require.resolve('path-browserify'),
+      stream: require.resolve('stream-browserify'),
+      zlib: require.resolve('browserify-zlib'),
+      assert: require.resolve('assert/'),
+    },
   },
   optimization: {
     minimizer: [new TerserPlugin()],

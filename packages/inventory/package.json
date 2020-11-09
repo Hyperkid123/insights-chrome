@@ -1,0 +1,35 @@
+{
+    "name": "@redhat-cloud-services/frontend-components-inventory",
+    "version": "2.4.22",
+    "description": "Inventory components for RedHat Cloud Services project.",
+    "scripts": {
+        "build": "NODE_ENV=production webpack --config config/webpack.config.js --mode=production",
+        "start": "webpack --watch --config config/webpack.config.js"
+    },
+    "license": "Apache-2.0",
+    "peerDependencies": {
+        "react": "^16.5.1",
+        "react-dom": "^16.5.1",
+        "react-redux": ">=5.0.7",
+        "react-router-dom": ">=4.2.2",
+        "@patternfly/react-core": ">=4.18.5",
+        "@patternfly/react-icons": ">=4.3.5",
+        "@patternfly/react-table": ">=4.5.7",
+        "prop-types": "^15.6.2",
+        "react-content-loader": ">=3.4.1"
+    },
+    "dependencies": {
+        "@redhat-cloud-services/frontend-components": "^2.4.19",
+        "@redhat-cloud-services/frontend-components-notifications": "^2.2.3",
+        "@redhat-cloud-services/frontend-components-utilities": "^2.2.7",
+        "@redhat-cloud-services/host-inventory-client": "1.0.77",
+        "abortcontroller-polyfill": "^1.5.0",
+        "axios": "^0.21.0"
+    },
+    "devDependencies": {
+        "mini-css-extract-plugin": "^1.3.0",
+        "optimize-css-assets-webpack-plugin": "^5.0.4",
+        "webpack": "^5.4.0",
+        "webpack-cli": "^4.2.0"
+    }
+}
