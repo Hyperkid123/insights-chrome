@@ -60,7 +60,7 @@ describe('Offline', () => {
         // and that lib is causing issues
         //
         // this hack is only necessry in test mode
-        offline.__set__('urijs', require('../../../../node_modules/urijs/src/URI'));
+        offline.__set__('urijs', require('../../../../../../node_modules/urijs/src/URI'));
         offline.__set__('getWindow', () => {
           return testWindow;
         });
