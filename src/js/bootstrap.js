@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDom from 'react-dom';
+import ReactDOM from 'react-dom';
 import auth from './auth';
 import analytics from './analytics';
 import sentry from './sentry';
@@ -41,3 +41,6 @@ if (typeof _satellite !== 'undefined' && typeof window._satellite.pageBottom ===
   window._satellite.pageBottom();
   registerUrlObserver(window._satellite.pageBottom);
 }
+
+window.chromeReact = React;
+window.chromeReactDOM = ReactDOM;
