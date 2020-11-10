@@ -12,11 +12,11 @@ import {
   CONFIG_CHANGED,
 } from "./action-types";
 import { mergeArraysByKey } from "@redhat-cloud-services/frontend-components-utilities/files/cjs/helpers";
-import { DateFormat } from "@redhat-cloud-services/frontend-components/components/cjs/DateFormat";
-// import { CullingInformation } from "@redhat-cloud-services/frontend-components/components/cjs/CullingInfo";
 import { TagWithDialog } from "../shared";
 import groupBy from "lodash/groupBy";
 import TitleColumn from "../components/table/TitleColumn";
+import CullingInformation from "../components/culling-information";
+import DateFormat from "../components/dateFormat/date-format";
 
 export const defaultState = {
   loaded: false,
@@ -57,7 +57,29 @@ const defaultColumns = [
         stale_timestamp: stale,
       }
     ) => {
-      return new Date(value).toLocaleString();
+      return CullingInformation ? (
+        <CullingInformation
+          culled={culled}
+          staleWarning={staleWarn}
+          stale={stale}
+          render={({ msg }) => (
+            <DateFormat
+              date={value}
+              extraTitle={
+                <React.Fragment>
+                  <div>{msg}</div>
+                  Last seen:{` `}
+                </React.Fragment>
+              }
+            />
+          )}
+        >
+          {" "}
+          <DateFormat date={value} />{" "}
+        </CullingInformation>
+      ) : (
+        new Date(value).toLocaleString()
+      );
     },
     props: { width: 25 },
   },

@@ -5,9 +5,9 @@ import {
   Skeleton,
   SkeletonSize,
 } from "@redhat-cloud-services/frontend-components/components/cjs/Skeleton";
-import { DateFormat } from "@redhat-cloud-services/frontend-components/components/cjs/DateFormat";
-import { CullingInformation } from "@redhat-cloud-services/frontend-components/components/cjs/CullingInfo";
 import { getFact } from "./helpers";
+import CullingInformation from "../culling-information";
+import DateFormat from "../dateFormat/date-format";
 
 /**
  * Basic information about system.

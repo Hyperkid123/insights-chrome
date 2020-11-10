@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const resolve = require('path').resolve;
 const WriteFileWebpackPlugin = require('write-file-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const { ModuleFederationPlugin } = require('webpack').container;
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 
 const plugins = [
   new ModuleFederationPlugin({
@@ -17,7 +17,7 @@ const plugins = [
       './InventoryDetail': resolve(__dirname, '../src/js/remotes/inventory-detail.js'),
       './InventoryAppInfo': resolve(__dirname, '../src/js/remotes/inventory-app-info.js'),
     },
-    shared: { react: { singleton: true, eager: true }, 'react-dom': { singleton: true, eager: true } },
+    shared: ['react', 'react-dom'],
   }),
   new CleanWebpackPlugin(),
   new WriteFileWebpackPlugin(),
