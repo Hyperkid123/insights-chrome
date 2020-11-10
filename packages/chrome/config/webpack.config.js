@@ -13,13 +13,6 @@ const commonConfig = ({ publicPath, noHash }) => ({
   },
   devtool: 'cheap-module-source-map',
   resolve: {
-    alias: {
-      PFReactTable: path.resolve(__dirname, './patternfly-table-externals.js'),
-      customReact: path.resolve(__dirname, './react-external.js'),
-      reactRedux: path.resolve(__dirname, './react-redux-external.js'),
-      'react-router-dom': path.resolve(__dirname, './react-router-dom-externals.js'),
-      PFReactCore: path.resolve(__dirname, './patternfly-react-externals.js'),
-    },
     fallback: {
       path: require.resolve('path-browserify'),
       stream: require.resolve('stream-browserify'),

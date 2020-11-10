@@ -1,5 +1,5 @@
-import setDependencies from '../externalDependencies';
 import { allDetails, drawer } from './accountNumbers.json';
+import invData from '@redhat-cloud-services/frontend-components-inventory';
 
 const isEnabled = async () => {
   const isExperimentalEnabled = window.localStorage.getItem('chrome:inventory:experimental_detail');
@@ -21,26 +21,15 @@ const isDrawerEnabled = async () => {
   );
 };
 
-export default async (dependencies) => {
+export default async () => {
   let SystemAdvisoryListStore;
   let SystemCvesStore;
   let systemProfileStore;
   let RenderWrapper;
 
-  setDependencies(dependencies);
-
   const isDetailsEnabled = await isEnabled();
   const drawerEnabled = await isDrawerEnabled();
   await import(/* webpackChunkName: "inventory-styles" */ './inventoryStyles');
-  const invData = await import(/* webpackChunkName: "inventory" */ '@redhat-cloud-services/frontend-components-inventory');
-
-  if (isDetailsEnabled || drawerEnabled) {
-    systemProfileStore = await import(
-      /* webpackChunkName: "inventory-gen-info-store" */
-      '@redhat-cloud-services/frontend-components-inventory-general-info/cjs/systemProfileStore'
-    );
-    RenderWrapper = await import(/* webpackChunkName: "inventory-render-wrapper" */ './RenderWrapper');
-  }
 
   if (isDetailsEnabled) {
     SystemAdvisoryListStore = (
@@ -57,6 +46,8 @@ export default async (dependencies) => {
       )
     )?.SystemCvesStore;
   }
+
+  console.log({ invData });
 
   return {
     ...invData,

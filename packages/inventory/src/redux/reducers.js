@@ -25,6 +25,7 @@ export function mergeWithEntities(additionalReducers = (state) => state) {
 }
 
 export function mergeWithDetail(additionalReducers = (state) => state) {
+  console.log(`mergeWithDetail`);
   return {
     entityDetails: (state, payload) => ({
       ...additionalReducers(

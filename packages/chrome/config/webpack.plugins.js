@@ -11,6 +11,11 @@ const plugins = [
     filename: 'chrome-remote.js',
     exposes: {
       './RemoteButton': resolve(__dirname, '../src/js/remotes/remote-button.js'),
+      './InventoryTable': resolve(__dirname, '../src/js/remotes/inventory-table.js'),
+      './reduxReducers': resolve(__dirname, '../src/js/remotes/redux-reducers.js'),
+      './InventoryDetailWrapper': resolve(__dirname, '../src/js/remotes/inventory-detail-wrapper.js'),
+      './InventoryDetail': resolve(__dirname, '../src/js/remotes/inventory-detail.js'),
+      './InventoryAppInfo': resolve(__dirname, '../src/js/remotes/inventory-app-info.js'),
     },
     shared: { react: { singleton: true, eager: true }, 'react-dom': { singleton: true, eager: true } },
   }),

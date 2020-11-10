@@ -1,5 +1,5 @@
 import React, { useEffect, Fragment } from "react";
-import { useParams } from "react-router-dom";
+import { Router, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
 import { loadEntity, deleteEntity } from "../../redux/actions";
@@ -7,11 +7,11 @@ import "./InventoryDetail.scss";
 import SystemNotFound from "./SystemNotFound";
 import TopBar from "./TopBar";
 import FactsInfo from "./FactsInfo";
-import { reloadWrapper } from "../../shared";
+import { reloadWrapper, RenderWrapper } from "../../shared";
 import { addNotification } from "@redhat-cloud-services/frontend-components-notifications/cjs/actions";
-import { NotAuthorized } from "@redhat-cloud-services/frontend-components/components/cjs/NotAuthorized";
 import ApplicationDetails from "./ApplicationDetails";
 import "./InventoryDetail.scss";
+import { Provider } from "@patternfly/react-table/dist/js/components/Table/base";
 
 /**
  * Composit component which tangles together Topbar, facts, tags, app details and if system is found or not.
@@ -40,6 +40,7 @@ const InventoryDetail = ({
       dispatch(loadEntity(currId, { hasItems: true }, { showTags }));
     }
   }, []);
+
   return (
     <div className="ins-entity-detail">
       {loaded && !entity ? (
@@ -106,4 +107,35 @@ InventoryDetail.defaultProps = {
   onBackToListClick: () => undefined,
 };
 
-export default InventoryDetail;
+// eslint-disable-next-line react/display-name
+const InventoryDetailWrapper = React.forwardRef(
+  (
+    { history, store, componentsMapper, isRbacEnabled = true, ...props },
+    ref
+  ) => {
+    console.log({ store, history });
+    return (
+      <Provider store={store}>
+        <Router history={history}>
+          <RenderWrapper
+            hideLoader
+            inventoryRef={ref}
+            {...props}
+            {...componentsMapper}
+            isRbacEnabled={isRbacEnabled}
+            cmp={InventoryDetail}
+          />
+        </Router>
+      </Provider>
+    );
+  }
+);
+
+InventoryDetailWrapper.propTypes = {
+  history: PropTypes.object.isRequired,
+  componentsMapper: PropTypes.object,
+  isRbacEnabled: PropTypes.bool,
+  store: PropTypes.object.isRequired,
+};
+
+export default InventoryDetailWrapper;

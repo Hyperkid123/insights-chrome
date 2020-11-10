@@ -18,7 +18,7 @@ const DetailRenderer = ({ showInventoryDrawer, isRbacEnabled, ...props }) => {
     return showInventoryDrawer ? (
       <DetailWrapper {...props} />
     ) : (
-      <React.Fragment {...props} />
+      <React.Fragment />
     );
   }
 };

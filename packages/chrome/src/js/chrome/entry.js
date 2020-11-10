@@ -1,10 +1,10 @@
 import React, { lazy, Suspense, Fragment } from 'react';
+import { INVENTORY_ACTION_TYPES } from '@redhat-cloud-services/frontend-components-inventory';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
 import { globalFilterScope, toggleGlobalFilter } from '../redux/actions';
 import { spinUpStore } from '../redux-config';
 import * as actionTypes from '../redux/action-types';
-import loadInventory from '../inventory/index';
 import loadRemediations from '../remediations';
 import qe from './iqeEnablement';
 import consts from '../consts';
@@ -17,6 +17,7 @@ import { getUrl, getEnv } from '../utils';
 import { createSupportCase } from '../createCase';
 import get from 'lodash/get';
 import { flatTags } from '../App/GlobalFilter/constants';
+import { reducers } from '@redhat-cloud-services/frontend-components-inventory';
 
 const NoAccess = lazy(() => import(/* webpackChunkName: "NoAccess" */ '../App/NoAccess'));
 
@@ -87,7 +88,6 @@ export function chromeInit(navResolver) {
       return middlewareListener.addNew(listener(callback));
     },
     $internal: { store },
-    loadInventory,
     experimental: {
       loadRemediations,
     },
@@ -117,9 +117,12 @@ export function bootstrap(libjwt, initFunc, getUser) {
       visibilityFunctions,
       init: initFunc,
     },
-    loadInventory,
     experimental: {
       loadRemediations,
+    },
+    inventory: {
+      INVENTORY_ACTION_TYPES,
+      reducers,
     },
   };
 }

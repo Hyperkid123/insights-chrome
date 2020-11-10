@@ -1,10 +1,7 @@
 import React from 'react';
-import setDependencies from '../externalDependencies';
 import Deferred from '@redhat-cloud-services/frontend-components-utilities/files/Deffered';
 
-export default async function loadRemediation(dependencies) {
-  setDependencies(dependencies);
-
+export default async function loadRemediation() {
   await import(/* webpackChunkName: "remediation-styles" */ './remediationsStyles');
   const remediationsData = await import(/* webpackChunkName: "remediations" */ '@redhat-cloud-services/frontend-components-remediations');
   const RenderWrapper = await import(/* webpackChunkName: "remediations-render-wrapper" */ './Wrapper');

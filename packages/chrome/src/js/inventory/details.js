@@ -2,12 +2,6 @@
 /* eslint-disable react/display-name */
 /* eslint-disable camelcase */
 import React, { Suspense, lazy } from 'react';
-const GeneralInformation = lazy(() =>
-  import(
-    /* webpackChunkName: "inventory-general-info" */
-    '@redhat-cloud-services/frontend-components-inventory-general-info/esm'
-  )
-);
 const PatchMan = lazy(() =>
   import(
     /* webpackChunkName: "inventory-patch" */

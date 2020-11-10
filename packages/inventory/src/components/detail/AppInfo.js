@@ -1,12 +1,13 @@
 /* eslint-disable camelcase */
 import React, { Fragment } from "react";
 import PropTypes from "prop-types";
-import { useLocation } from "react-router-dom";
-import { useStore, useSelector } from "react-redux";
+import { Router, useLocation } from "react-router-dom";
+import { useStore, useSelector, Provider } from "react-redux";
 import {
   Skeleton,
   SkeletonSize,
 } from "@redhat-cloud-services/frontend-components/components/cjs/Skeleton";
+import { RenderWrapper } from "../../shared";
 
 /**
  * Small component that just renders active detail with some specific class.
@@ -32,6 +33,7 @@ const AppInfo = ({ componentMapper, appList }) => {
     }
   );
   const Cmp = componentMapper || activeApp?.component;
+
   return (
     <Fragment>
       {loaded ? (
@@ -66,4 +68,33 @@ AppInfo.propTypes = {
   ),
 };
 
-export default AppInfo;
+// eslint-disable-next-line react/display-name
+const AppInfoWrapper = React.forwardRef(
+  (
+    { history, componentsMapper, isRbacEnabled = true, store, ...props },
+    ref
+  ) => (
+    <Provider store={store}>
+      <Router history={history}>
+        <RenderWrapper
+          hideLoader
+          {...props}
+          {...componentsMapper}
+          isRbacEnabled={isRbacEnabled}
+          inventoryRef={ref}
+          store={store}
+          cmp={AppInfo}
+        />
+      </Router>
+    </Provider>
+  )
+);
+
+AppInfoWrapper.propTypes = {
+  history: PropTypes.object.isRequired,
+  componentsMapper: PropTypes.object,
+  isRbacEnabled: PropTypes.bool,
+  store: PropTypes.object.isRbacEnabled,
+};
+
+export default AppInfoWrapper;

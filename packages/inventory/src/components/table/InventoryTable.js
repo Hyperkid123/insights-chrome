@@ -1,10 +1,14 @@
+/* eslint-disable react/display-name */
 import React, { Fragment, forwardRef } from "react";
-import { useSelector, shallowEqual } from "react-redux";
+import PropTypes from "prop-types";
+import { useSelector, shallowEqual, Provider } from "react-redux";
 import EntityTableToolbar from "./EntityTableToolbar";
 import { TableToolbar } from "@redhat-cloud-services/frontend-components/components/cjs/TableToolbar";
 import InventoryList from "./InventoryList";
 import Pagination from "./Pagination";
 import AccessDenied from "../../shared/AccessDenied";
+import { RenderWrapper } from "../../shared";
+import { BrowserRouter, Router } from "react-router-dom";
 
 /**
  * This component is used to combine all essential components together:
@@ -114,4 +118,28 @@ const InventoryTable = forwardRef(
   }
 );
 
-export default InventoryTable;
+const InventoryTableWrapper = forwardRef(
+  ({ store, history, isRbacEnabled = true, ...props }, ref) => {
+    return (
+      <Router history={history}>
+        <Provider store={store}>
+          <RenderWrapper
+            {...props}
+            isRbacEnabled={isRbacEnabled}
+            inventozryRef={ref}
+            store={store}
+            cmp={InventoryTable}
+          />
+        </Provider>
+      </Router>
+    );
+  }
+);
+
+InventoryTableWrapper.propTypes = {
+  store: PropTypes.object.isRequired,
+  isRbacEnabled: PropTypes.bool,
+  history: PropTypes.object.isRequired,
+};
+
+export default InventoryTableWrapper;

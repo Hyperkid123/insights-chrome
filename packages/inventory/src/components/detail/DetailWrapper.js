@@ -10,7 +10,7 @@ import {
   DrawerCloseButton,
 } from "@patternfly/react-core/dist/js/components/Drawer";
 import PropTypes from "prop-types";
-import { useSelector, useDispatch, useStore } from "react-redux";
+import { useSelector, useDispatch, useStore, Provider } from "react-redux";
 import { toggleDrawer } from "../../redux/actions";
 import { BasicInfo, SystemIssues } from "../drawer";
 import { Stack, StackItem } from "@patternfly/react-core/dist/js/layouts/Stack";
@@ -91,4 +91,22 @@ DetailWrapper.defaultProps = {
   appName: "general_information",
 };
 
-export default DetailWrapper;
+const DetailWrapperConnector = ({ store, isRbacEnabled = true, ...props }) => {
+  const showInventoryDrawer = false;
+  return (
+    <Provider store={store}>
+      <DetailWrapper
+        {...props}
+        showInventoryDrawer={showInventoryDrawer}
+        isRbacEnabled={isRbacEnabled}
+      />
+    </Provider>
+  );
+};
+
+DetailWrapperConnector.propTypes = {
+  store: PropTypes.object.isRequired,
+  isRbacEnabled: PropTypes.bool,
+};
+
+export default DetailWrapperConnector;
