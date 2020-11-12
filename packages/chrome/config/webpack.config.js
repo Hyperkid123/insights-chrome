@@ -13,6 +13,11 @@ const commonConfig = ({ publicPath, noHash }) => ({
   },
   devtool: 'cheap-module-source-map',
   resolve: {
+    alias: {
+      react: path.resolve('../../node_modules/react'),
+      'react-dom': path.resolve('../../node_modules/react-dom'),
+      '@patternfly/react-core': path.resolve('../../node_modules/@patternfly/react-core'),
+    },
     fallback: {
       path: require.resolve('path-browserify'),
       stream: require.resolve('stream-browserify'),

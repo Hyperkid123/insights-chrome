@@ -3,6 +3,7 @@ const resolve = require('path').resolve;
 const WriteFileWebpackPlugin = require('write-file-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+const deps = require('../package.json').dependencies;
 
 const plugins = [
   new ModuleFederationPlugin({
@@ -17,7 +18,15 @@ const plugins = [
       './InventoryDetail': resolve(__dirname, '../src/js/remotes/inventory-detail.js'),
       './InventoryAppInfo': resolve(__dirname, '../src/js/remotes/inventory-app-info.js'),
     },
-    shared: ['react', 'react-dom'],
+    shared: [
+      {
+        react: { singleton: true, requiredVersion: deps.react, eager: true },
+      },
+      {
+        'react-dom': { singleton: true, requiredVersion: deps['react-dom'], eager: true },
+      },
+      { '@patternfly/react-core': { singleton: true, eager: true } },
+    ],
   }),
   new CleanWebpackPlugin(),
   new WriteFileWebpackPlugin(),

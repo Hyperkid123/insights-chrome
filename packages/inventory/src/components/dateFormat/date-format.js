@@ -1,13 +1,13 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { dateByType } from "./helper";
+import { DateByType } from "./helper";
 
-export default function DateFormat({
+const DateFormat = ({
   date,
   type = "relative",
   extraTitle,
   tooltipProps = {},
-}) {
+}) => {
   const dateObj = date instanceof Date ? date : new Date(date);
   // Prevent treating null as valid. (new Date(null) == new Date(0) returns 1970 Jan 1)
   const invalid =
@@ -16,11 +16,14 @@ export default function DateFormat({
     dateObj.toString() === "Invalid Date";
   const dateType = invalid ? "invalid" : type;
   return (
-    <React.Fragment>
-      {dateByType(dateType, tooltipProps, extraTitle)(dateObj)}
-    </React.Fragment>
+    <DateByType
+      type={dateType}
+      tooltipProps={tooltipProps}
+      extraTitle={extraTitle}
+      date={dateObj}
+    />
   );
-}
+};
 
 DateFormat.propTypes = {
   date: PropTypes.oneOfType([
@@ -37,3 +40,5 @@ DateFormat.propTypes = {
     ]),
   }),
 };
+
+export default DateFormat;

@@ -4,7 +4,6 @@ import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
 } from "@patternfly/react-icons";
-import { Tooltip } from "@patternfly/react-core";
 import classnames from "classnames";
 
 import "./culling-information.scss";
@@ -36,27 +35,18 @@ const calculateTooltip = (culled, warning, currDate) => {
 const CullingInformation = ({
   culled,
   staleWarning,
-  stale,
   currDate,
   children,
   render,
+  Component,
   ...props
 }) => {
-  // TODO: remove comments once culling is fine
-  if (new Date(currDate) - new Date(stale) < 0) {
-    return render
-      ? render({
-          msg: "",
-        })
-      : children;
-  }
-
   const { isWarn, isError, msg } = calculateTooltip(
     culled,
     staleWarning,
     currDate
   );
-  if (render) {
+  /**  if (Component) {
     return (
       <span
         className={classnames({
@@ -66,26 +56,24 @@ const CullingInformation = ({
       >
         {isWarn && <ExclamationTriangleIcon />}
         {isError && <ExclamationCircleIcon />}
-        {render({ msg })}
+        <Component msg={msg} />
       </span>
     );
-  }
+  }*/
 
   return (
-    <React.Fragment>
-      <Tooltip {...props} content={msg}>
-        <span
-          className={classnames({
-            "ins-c-inventory__culling-warning": isWarn,
-            "ins-c-inventory__culling-danger": isError,
-          })}
-        >
-          {isError && <ExclamationCircleIcon />}
-          {isWarn && <ExclamationTriangleIcon />}
-          {children}
-        </span>
-      </Tooltip>
-    </React.Fragment>
+    // <Tooltip {...props} content={msg}>
+    <span
+      className={classnames({
+        "ins-c-inventory__culling-warning": isWarn,
+        "ins-c-inventory__culling-danger": isError,
+      })}
+    >
+      {isError && <ExclamationCircleIcon />}
+      {isWarn && <ExclamationTriangleIcon />}
+      {children}
+    </span>
+    // </Tooltip>
   );
 };
 

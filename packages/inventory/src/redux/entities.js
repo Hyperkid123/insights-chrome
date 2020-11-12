@@ -57,28 +57,25 @@ const defaultColumns = [
         stale_timestamp: stale,
       }
     ) => {
-      return CullingInformation ? (
+      return (
         <CullingInformation
           culled={culled}
           staleWarning={staleWarn}
           stale={stale}
-          render={({ msg }) => (
+          Component={({ msg }) => (
             <DateFormat
               date={value}
               extraTitle={
                 <React.Fragment>
                   <div>{msg}</div>
-                  Last seen:{` `}
+                  Last seen:
                 </React.Fragment>
               }
             />
           )}
         >
-          {" "}
-          <DateFormat date={value} />{" "}
+          <DateFormat date={value} />
         </CullingInformation>
-      ) : (
-        new Date(value).toLocaleString()
       );
     },
     props: { width: 25 },

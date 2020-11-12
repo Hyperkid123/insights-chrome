@@ -1,5 +1,5 @@
-import React from "react";
-import { Tooltip } from "@patternfly/react-core";
+import React, { Fragment } from "react";
+import PropTypes from "prop-types";
 
 const second = 1000;
 const minute = second * 60;
@@ -36,15 +36,26 @@ const relativeTimeTable = [
 
 const exact = (value) => value.toUTCString().split(",")[1].slice(0, -7).trim();
 
-export const addTooltip = (date, element, tooltipProps, extraTitle = "") => (
-  <div>
-    <div>
-      {extraTitle}
+export const AddTooltip = ({
+  date,
+  element,
+  tooltipProps,
+  extraTitle = "",
+}) => {
+  return (
+    <Fragment>
+      {element}
       {date}
-    </div>
-    {element}
-  </div>
-);
+    </Fragment>
+  );
+};
+
+AddTooltip.propTypes = {
+  date: PropTypes.any,
+  element: PropTypes.node,
+  tooltipProps: PropTypes.object,
+  extraTitle: PropTypes.node,
+};
 
 export const dateStringByType = (type) =>
   ({
@@ -61,16 +72,29 @@ export const dateStringByType = (type) =>
     invalid: () => "Invalid date",
   }[type]);
 
-export const dateByType = (type, tooltipProps, extraTitle) =>
-  ({
-    exact: (date) => dateStringByType(type)(date),
-    onlyDate: (date) => dateStringByType(type)(date),
-    relative: (date) =>
-      addTooltip(
-        dateStringByType("exact")(date),
-        <span>{dateStringByType(type)(date)}</span>,
-        tooltipProps,
-        extraTitle
-      ),
-    invalid: () => "Invalid date",
-  }[type]);
+export const DateByType = ({ type, tooltipProps, extraTitle, date }) => {
+  if (type === "exact") {
+    return <Fragment>{dateStringByType(type)(date)}</Fragment>;
+  }
+  if (type === "onlyDate") {
+    return <Fragment>{dateStringByType(type)(date)}</Fragment>;
+  }
+  if (type === "relative") {
+    return (
+      <AddTooltip
+        date={dateStringByType("exact")(date)}
+        element={<span>{dateStringByType(type)(date)}</span>}
+        tooltipProps={tooltipProps}
+        extraTitle={extraTitle}
+      />
+    );
+  }
+  return <Fragment>Invalid date</Fragment>;
+};
+
+DateByType.propTypes = {
+  type: PropTypes.string,
+  tooltipProps: PropTypes.object,
+  extraTitle: PropTypes.node,
+  date: PropTypes.any,
+};
