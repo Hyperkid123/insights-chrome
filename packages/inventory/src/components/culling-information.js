@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { Tooltip } from "@patternfly/react-core";
 import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
@@ -46,7 +47,7 @@ const CullingInformation = ({
     staleWarning,
     currDate
   );
-  /**  if (Component) {
+  if (Component) {
     return (
       <span
         className={classnames({
@@ -59,21 +60,21 @@ const CullingInformation = ({
         <Component msg={msg} />
       </span>
     );
-  }*/
+  }
 
   return (
-    // <Tooltip {...props} content={msg}>
-    <span
-      className={classnames({
-        "ins-c-inventory__culling-warning": isWarn,
-        "ins-c-inventory__culling-danger": isError,
-      })}
-    >
-      {isError && <ExclamationCircleIcon />}
-      {isWarn && <ExclamationTriangleIcon />}
-      {children}
-    </span>
-    // </Tooltip>
+    <Tooltip {...props} content={msg}>
+      <span
+        className={classnames({
+          "ins-c-inventory__culling-warning": isWarn,
+          "ins-c-inventory__culling-danger": isError,
+        })}
+      >
+        {isError && <ExclamationCircleIcon />}
+        {isWarn && <ExclamationTriangleIcon />}
+        {children}
+      </span>
+    </Tooltip>
   );
 };
 

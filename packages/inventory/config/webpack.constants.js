@@ -6,7 +6,7 @@ module.exports = {
     "@redhat-cloud-services/frontend-components-utilities",
     /@redhat-cloud-services\/frontend-components-utilities\/*/,
     "@redhat-cloud-services/frontend-components",
-    /@redhat-cloud-services\/frontend-components\/*/,
+    /@redhat-cloud-services\/frontend-components\/*.js/,
     "@redhat-cloud-services/frontend-components-notifications",
     /@redhat-cloud-services\/frontend-components-notifications\/*/,
     "@redhat-cloud-services/frontend-components-remediations",
