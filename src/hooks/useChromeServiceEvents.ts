@@ -6,12 +6,25 @@ import { getEncodedToken, setCookie } from '../jwt/jwt';
 
 const NOTIFICATION_DRAWER = 'notifications.drawer';
 const SAMPLE_EVENT = 'sample.type';
+const DATA_INVALIDATION = 'data.invalidation';
 
-const ALL_TYPES = [NOTIFICATION_DRAWER, SAMPLE_EVENT] as const;
+export enum InvalidationTypes {
+  create = 'create',
+  update = 'update',
+  delete = 'delete',
+}
+
+const ALL_TYPES = [NOTIFICATION_DRAWER, SAMPLE_EVENT, DATA_INVALIDATION] as const;
 type EventTypes = typeof ALL_TYPES[number];
 
 type SamplePayload = {
   foo: string;
+};
+
+type DataInvalidationPayload = {
+  entityType: string;
+  eventType: InvalidationTypes;
+  entityId: string;
 };
 
 type NotificationPayload = {
@@ -32,12 +45,13 @@ function isGenericEvent(event: unknown): event is GenericEvent {
 const useChromeServiceEvents = () => {
   const connection = useRef<WebSocket | undefined>();
   const dispatch = useDispatch();
-  const isNotificationsEnabled = useFlag('platform.chrome.notifications-drawer');
+  const isNotificationsEnabled = true || useFlag('platform.chrome.notifications-drawer');
 
   const handlerMap: { [key in EventTypes]: (payload: Payload) => void } = useMemo(
     () => ({
       [NOTIFICATION_DRAWER]: (data: Payload) => dispatch({ type: 'foo', payload: data }),
       [SAMPLE_EVENT]: (data: Payload) => console.log('Received sample payload', data),
+      [DATA_INVALIDATION]: (data: Payload) => console.log('Invalidation data', data),
     }),
     []
   );
@@ -50,6 +64,7 @@ const useChromeServiceEvents = () => {
     const token = getEncodedToken();
     if (token) {
       const socketUrl = `${document.location.origin.replace(/^.+:\/\//, 'wss://')}/wss/chrome-service/v1/ws`;
+      // const socketUrl = 'wss://console.stage.redhat.com/wss/chrome-service/v1/ws';
       // ensure the cookie exists before we try to establish connection
       await setCookie(token);
 
@@ -78,10 +93,12 @@ const useChromeServiceEvents = () => {
     try {
       // create only one connection and only feature is enabled
       if (isNotificationsEnabled && !connection.current) {
-        createConnection();
+        createConnection().catch((error) => {
+          console.error('Unable to establish WS connection', error);
+        });
       }
     } catch (error) {
-      console.error('Unable to establish WS connection');
+      console.error('Unable to establish WS connection', error);
     }
   }, [isNotificationsEnabled]);
 };

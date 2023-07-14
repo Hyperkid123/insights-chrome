@@ -8,6 +8,10 @@ const { createJoinFunction, createJoinImplementation, asGenerator, defaultJoinGe
 const searchIgnoredStyles = require('@redhat-cloud-services/frontend-components-config-utilities/search-ignored-styles');
 const proxy = require('@redhat-cloud-services/frontend-components-config-utilities/proxy');
 const imageNullLoader = require('./image-null-loader');
+const cookieTransform = require('@redhat-cloud-services/frontend-components-config-utilities/cookieTransform.js')
+const HttpsProxyAgent = require('https-proxy-agent');
+const proxyURL = 'http://squid.corp.redhat.com:3128'
+const wsAgent = new HttpsProxyAgent(proxyURL);
 
 // call default generator then pair different variations of uri with each base
 const myGenerator = asGenerator((item, ...rest) => {
@@ -151,7 +155,39 @@ const commonConfig = ({ dev }) => {
         publicPath,
         proxyVerbose: true,
         isChrome: true,
+        customProxy: [
+          {
+            context(url) {
+              // console.log('custom proxy shit:', { url, res: url.includes('wss/chrome-service/v1/ws') });
+              return url.includes('wss/chrome-service/v1/ws');
+            },
+            secure: false,
+            changeOrigin: true,
+            autoRewrite: true,
+            ws: true,
+            onProxyReq: cookieTransform,
+            // router: () => {
+            //   return 'wss://console.stage.redhat.com';
+            // },
+            // host: `wss://console.stage.redhat.com`,
+            // target: `wss://console.stage.redhat.com`,
+            target: `wss://gateway-stage.apps.crcs02ue1.urby.p1.openshiftapps.com:443`,
+            // target: `ws://localhost:8000`,
+            // target: `wss://localhost:1222`,
+            agent: wsAgent,
+          },
+        ],
         routes: {
+          // web sockets
+          // '/wss/chrome-service/': {
+          //   target: `wss://console.stage.redhat.com`,
+          //   context(url) {
+          //     console.log('normal proxy shit: ', { url, res: url.includes('wss/chrome-service/v1/ws') });
+          //     return url.includes('wss/chrome-service/v1/ws');
+          //   },
+          //   // To upgrade the connection
+          //   ws: true,
+          // },
           ...(process.env.CHROME_SERVICE && {
             // web sockets
             '/wss/chrome-service/': {
@@ -190,5 +226,8 @@ module.exports = function (env) {
     config.plugins.push(new BundleAnalyzerPlugin());
   }
 
+  console.log({
+    c: config.devServer.proxy,
+  });
   return config;
 };
