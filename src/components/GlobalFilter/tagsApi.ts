@@ -1,19 +1,27 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // FIXME: Figure out what are the issues with the JS client
 /* eslint-disable camelcase */
-import instance from '@redhat-cloud-services/frontend-components-utilities/interceptors';
-import { AAP_KEY, INVENTORY_API_BASE, MSSQL_KEY, flatTags } from './globalFilterApi';
-import { HostsApi, SystemProfileApi, TagsApi } from '@redhat-cloud-services/host-inventory-client';
-import { FlagTagsFilter } from '../../@types/types';
-import { TagRegisteredWith } from '../../redux/store';
+import { AAP_KEY, MSSQL_KEY, flatTags } from './globalFilterApi';
+import { APIFactory } from '@redhat-cloud-services/javascript-clients-shared';
 
-export const tags = new TagsApi(undefined, INVENTORY_API_BASE, instance as any);
-export const sap = new SystemProfileApi(undefined, INVENTORY_API_BASE, instance as any);
-export const system = new HostsApi(undefined, INVENTORY_API_BASE, instance as any);
+import apiHostGetHostList, { ApiHostGetHostListParams } from '@redhat-cloud-services/host-inventory-client/dist/ApiHostGetHostList';
+import apiTagsGetTags from '@redhat-cloud-services/host-inventory-client/dist/ApiTagGetTags';
+import apiSystemProfileGetSapSids from '@redhat-cloud-services/host-inventory-client/dist/ApiSystemProfileGetSapSids';
+import apiSystemProfileGetSapSystem from '@redhat-cloud-services/host-inventory-client/dist/ApiSystemProfileGetSapSystem';
+import { FlagTagsFilter } from '../../@types/types';
+
+import { search } from '../../entitySearch/hostsSearch';
+
+const hostInventoryApi = APIFactory({
+  apiHostGetHostList,
+  apiTagsGetTags,
+  apiSystemProfileGetSapSids,
+  apiSystemProfileGetSapSystem,
+});
 
 export type Workload = { isSelected?: boolean };
 export type TagPagination = { perPage?: number; page?: number };
-export type TagFilterOptions = { search?: string; registeredWith?: TagRegisteredWith[number]; activeTags?: FlagTagsFilter };
+export type TagFilterOptions = { search?: string; registeredWith?: any[]; activeTags?: FlagTagsFilter };
 
 const buildFilter = (workloads?: { [key: string]: Workload }, SID?: string[]) => ({
   system_profile: {
@@ -53,122 +61,71 @@ const generateFilter = (
 
 export function getAllTags({ search, activeTags, registeredWith }: TagFilterOptions = {}, pagination?: TagPagination) {
   const [workloads, SID, selectedTags] = flatTags(activeTags, false, true);
-  return tags.apiTagGetTags(
-    selectedTags, // tag filer
-    'tag',
-    'ASC',
-    pagination?.perPage || 10,
-    pagination?.page || 1,
-    undefined,
+  
+  return hostInventoryApi.apiTagsGetTags({
+    tags: selectedTags,
+    orderBy: 'tag',
+    orderHow: 'ASC',
+    perPage: pagination?.perPage || 10,
+    page: pagination?.page || 1,
     search,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    // @ts-ignore
-    registeredWith ? registeredWith : undefined,
-    undefined,
-    {
-      query: generateFilter(buildFilter(workloads, SID)),
-    }
-  );
+    registeredWith: registeredWith,
+    filter: generateFilter(buildFilter(workloads, SID)) as any,
+  });
 }
 
 export function getAllSIDs({ search, activeTags, registeredWith }: TagFilterOptions = {}, pagination: TagPagination = {}) {
   const [workloads, SID, selectedTags] = flatTags(activeTags, false, true);
 
-  return sap.apiSystemProfileGetSapSids(
+  return hostInventoryApi.apiSystemProfileGetSapSids({
     search,
-    selectedTags, // tags
-    (pagination && pagination.perPage) || 10,
-    (pagination && pagination.page) || 1,
-    undefined, // staleness,
-    // @ts-ignore
-    registeredWith ? registeredWith : undefined,
-    undefined,
-    {
-      query: generateFilter(buildFilter(workloads, SID)),
-    }
-  );
+    tags: selectedTags,
+    perPage: pagination.perPage || 10,
+    page: pagination.page || 1,
+    registeredWith: registeredWith,
+    filter: generateFilter(buildFilter(workloads, SID)) as any,
+  });
 }
 
 export async function getAllWorkloads({ activeTags, registeredWith }: TagFilterOptions = {}, pagination: TagPagination = {}) {
   const [workloads, SID, selectedTags] = flatTags(activeTags, false, true);
+  search('test');
   const [SAP, AAP, MSSQL] = await Promise.all([
-    sap.apiSystemProfileGetSapSystem(
-      selectedTags, // tags
-      (pagination && pagination.perPage) || 10,
-      (pagination && pagination.page) || 1,
-      undefined, // staleness,
-      // @ts-ignore
-      registeredWith ? registeredWith : undefined,
-      undefined,
-      {
-        query: generateFilter(buildFilter(workloads, SID)),
-      }
-    ),
-    system.apiHostGetHostList(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      1, // number of items per page
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      selectedTags,
-      // @ts-ignore
-      registeredWith ? registeredWith : undefined,
-      undefined,
-      undefined,
-      {
-        query: generateFilter(
-          buildFilter(
-            {
-              ...(workloads || {}),
-              [AAP_KEY]: { isSelected: true },
-            },
-            SID
-          )
-        ),
-      }
-    ),
-    system.apiHostGetHostList(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      1, // number of items per page
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      selectedTags,
-      // @ts-ignore
-      registeredWith ? registeredWith : undefined,
-      undefined,
-      undefined,
-      {
-        query: generateFilter(
-          buildFilter(
-            {
-              ...(workloads || {}),
-              [MSSQL_KEY]: { isSelected: true },
-            },
-            SID
-          )
-        ),
-      }
-    ),
+    hostInventoryApi.apiSystemProfileGetSapSystem({
+      tags: selectedTags,
+      perPage: pagination.perPage || 10,
+      page: pagination.page || 1,
+      registeredWith: registeredWith,
+      filter: generateFilter(buildFilter(workloads, SID)) as any,
+    }),
+    hostInventoryApi.apiHostGetHostList({
+      registeredWith: registeredWith,
+      perPage: 1,
+      tags: selectedTags,
+      filter: generateFilter(
+        buildFilter(
+          {
+            ...(workloads || {}),
+            [AAP_KEY]: { isSelected: true },
+          },
+          SID
+        )
+      ) as unknown as ApiHostGetHostListParams['filter'],
+    }),
+    hostInventoryApi.apiHostGetHostList({
+      registeredWith: registeredWith,
+      perPage: 1,
+      tags: selectedTags,
+      filter: generateFilter(
+        buildFilter(
+          {
+            ...(workloads || {}),
+            [MSSQL_KEY]: { isSelected: true },
+          },
+          SID
+        )
+      ) as unknown as ApiHostGetHostListParams['filter'],
+    }),
   ]);
   return { SAP, AAP, MSSQL };
 }

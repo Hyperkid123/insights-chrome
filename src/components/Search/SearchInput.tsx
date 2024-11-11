@@ -5,6 +5,8 @@ import { Menu, MenuContent, MenuFooter, MenuGroup, MenuItem, MenuList } from '@p
 import { SearchInput as PFSearchInput, SearchInputProps } from '@patternfly/react-core/dist/dynamic/components/SearchInput';
 import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner';
 import { Popper } from '@patternfly/react-core/dist/dynamic/helpers/Popper/Popper';
+import { getModule } from '@scalprum/core';
+import debouncePromise from 'awesome-debounce-promise';
 
 import './SearchInput.scss';
 
@@ -21,6 +23,64 @@ import { isPreviewAtom } from '../../state/atoms/releaseAtom';
 import { ReleaseEnv } from '../../@types/types.d';
 import type { SearchItem } from './SearchTypes';
 import SearchFeedback, { SearchFeedbackType } from './SearchFeedback';
+import { ChromeAPI } from '@redhat-cloud-services/types';
+import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
+
+type RemoteSearchFunction = (query: string, chrome: ChromeAPI) => Promise<{ title: string; description: string; href: string }[]>;
+
+type RemoteSearchModules = {
+  [prefix: string]: {
+    search: RemoteSearchFunction;
+  };
+};
+
+const availablePrefixes = { rbac: ['rbac:group'] };
+const availableEntities = Object.values(availablePrefixes).flat();
+
+const useModuleSearch = (availablePrefixes: { [scope: string]: string[] }) => {
+  const [searchModules, setSearchModules] = useState<RemoteSearchModules>({});
+  const moduleResolverCache = useRef<{ [queryPrefix: string]: string }>({});
+
+  function findScopeByPrefix(prefix: string) {
+    return Object.keys(availablePrefixes).find((scope) => availablePrefixes[scope].includes(prefix));
+  }
+
+  const initSearchModule = async (prefix: string) => {
+    const templateName = './GlobalSearchTemplate';
+    const queryNamedExport = 'search';
+    let scope: string | undefined = moduleResolverCache.current[prefix];
+    if (!scope) {
+      scope = findScopeByPrefix(prefix);
+      if (scope) {
+        moduleResolverCache.current[prefix] = scope;
+      }
+    }
+    if (!scope) {
+      console.warn(`No module found for prefix: ${prefix}`);
+      return;
+    }
+
+    const search: RemoteSearchFunction | undefined = searchModules[prefix]?.search;
+    if (!search) {
+      const searchModule = await getModule<
+        ((query: string, chrome: ChromeAPI) => Promise<{ title: string; description: string; href: string }[]>) | undefined
+      >(scope, templateName, queryNamedExport);
+      if (searchModule) {
+        const debouncedSearch = debouncePromise(searchModule, 500);
+        setSearchModules((prev) => ({
+          ...prev,
+          [prefix]: { search: debouncedSearch },
+        }));
+      } else {
+        console.warn(`No search function found for prefix: ${prefix}`);
+        return;
+      }
+    }
+
+    return search;
+  };
+  return { searchModules, initSearchModule };
+};
 
 export type SearchInputprops = {
   isExpanded?: boolean;
@@ -51,6 +111,8 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
   const { ready, analytics } = useSegment();
   const blockCloseEvent = useRef(false);
   const asyncLocalOramaData = useAtomValue(asyncLocalOrama);
+  const { searchModules, initSearchModule } = useModuleSearch(availablePrefixes);
+  const chrome = useChrome();
 
   const debouncedTrack = useCallback(analytics ? debounce(analytics.track, 1000) : () => null, [analytics]);
 
@@ -148,12 +210,41 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
     };
   }, [isOpen, menuRef]);
 
+  async function handleEntitySearch(prefix: string, query: string) {
+    let search: RemoteSearchFunction | undefined = searchModules[prefix]?.search;
+    if (!searchModules[prefix]) {
+      search = await initSearchModule(prefix);
+    }
+
+    if (!search) {
+      return [];
+    }
+    const cleanQuery = query.replace(`${prefix}`, '').trim();
+    const response = await search(cleanQuery, chrome);
+    const results: Awaited<ReturnType<typeof localQuery>> = response.map((item) => ({
+      id: crypto.randomUUID(),
+      title: item.title,
+      description: item.description,
+      pathname: item.href,
+      bundleTitle: '',
+    }));
+    return results;
+  }
+
   const handleChange: SearchInputProps['onChange'] = async (_e, value) => {
     setSearchValue(value);
     setIsFetching(true);
-    const results = await localQuery(asyncLocalOramaData, value, isPreview ? ReleaseEnv.PREVIEW : ReleaseEnv.STABLE);
-    setSearchItems(results ?? []);
-    isMounted.current && setIsFetching(false);
+    const matchedPrefix = availableEntities.find((prefix) => value.length > 5 && value.startsWith(prefix));
+    if (matchedPrefix) {
+      const results = await handleEntitySearch(matchedPrefix, value);
+
+      setSearchItems(results ?? []);
+      isMounted.current && setIsFetching(false);
+    } else {
+      const results = await localQuery(asyncLocalOramaData, value, isPreview ? ReleaseEnv.PREVIEW : ReleaseEnv.STABLE);
+      setSearchItems(results ?? []);
+      isMounted.current && setIsFetching(false);
+    }
     if (ready && analytics) {
       debouncedTrack('chrome.search-query', { query: value });
     }

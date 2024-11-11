@@ -163,7 +163,7 @@ export const GlobalFilterDropdown: React.FunctionComponent<GlobalFilterDropdownP
             if (!isSubmit) {
               dispatch(
                 fetchAllTags({
-                  registeredWith: registeredWith as 'insights',
+                  registeredWith,
                   activeTags: selectedTags,
                   search: filterTagsBy,
                 })

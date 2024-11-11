@@ -154,6 +154,9 @@ const commonConfig = ({ dev }) => {
         proxyVerbose: true,
         isChrome: true,
         routes: {
+          '/apps/rbac': {
+            host: `http://localhost:8003`,
+          },
           ...(process.env.CHROME_SERVICE && {
             // web sockets
             '/wss/chrome-service/': {

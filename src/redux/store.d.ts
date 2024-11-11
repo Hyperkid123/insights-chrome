@@ -1,3 +1,4 @@
+import { ApiHostGetHostListParams } from '@redhat-cloud-services/host-inventory-client/dist/ApiHostGetHostList';
 import { FlagTagsFilter } from '../@types/types';
 
 export type GlobalFilterWorkloads = {
@@ -59,9 +60,7 @@ export type GlobalFilterTags = {
   perPage?: number;
 };
 
-export type TagRegisteredWith = Array<
-  'insights' | 'yupana' | 'puptoo' | 'rhsm-conduit' | 'cloud-connector' | '!yupana' | '!puptoo' | '!rhsm-conduit' | '!cloud-connector'
->;
+export type TagRegisteredWith = ApiHostGetHostListParams['registeredWith'];
 
 export type GlobalFilterState = {
   tags: GlobalFilterTags;
