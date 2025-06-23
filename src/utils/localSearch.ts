@@ -1,4 +1,5 @@
 import { search } from '@orama/orama';
+import { LabelProps } from '@patternfly/react-core/dist/dynamic/components/Label';
 import { ReleaseEnv } from '../@types/types.d';
 import { SearchPermissions, SearchPermissionsCache } from '../state/atoms/localSearchAtom';
 import { evaluateVisibility } from './isNavItemVisible';
@@ -15,12 +16,14 @@ const matchCache: {
   description: {},
 };
 
-type ResultItem = {
+export type ResultItem = {
   title: string;
   description: string;
   bundleTitle: string;
   pathname: string;
   id: string;
+  source?: 'local' | 'mcp';
+  labels?: Array<{ text: string; color?: LabelProps['color'] }>;
 };
 
 const resultCache: {
@@ -115,7 +118,13 @@ async function checkResultPermissions(id: string, env: ReleaseEnv = ReleaseEnv.S
   return result;
 }
 
-export const localQuery = async (db: any, term: string, env: ReleaseEnv = ReleaseEnv.STABLE, useGenerated = false) => {
+export const localQuery = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  term: string,
+  env: ReleaseEnv = ReleaseEnv.STABLE,
+  useGenerated = false
+): Promise<ResultItem[]> => {
   try {
     const cacheKey = `${env}-${term}`;
     let results: ResultItem[] | undefined = resultCache[cacheKey];
@@ -123,7 +132,7 @@ export const localQuery = async (db: any, term: string, env: ReleaseEnv = Releas
       return results;
     }
 
-    results = [];
+    // Local search only
     const r = await search(db, {
       term,
       threshold: 0.5,
@@ -147,23 +156,26 @@ export const localQuery = async (db: any, term: string, env: ReleaseEnv = Releas
       const {
         document: { id },
       } = hit;
-      const res = await checkResultPermissions(id);
+      const res = await checkResultPermissions(String(id));
       // skip hidden items
       if (!res) {
-        searches.push(hit.document);
+        searches.push(
+          Promise.resolve({
+            ...hit.document,
+            source: 'local' as const,
+          } as ResultItem)
+        );
       }
     }
     const validResults = await Promise.all(searches);
-    for (let i = 0; i < Math.min(10, validResults.length); i += 1) {
-      const { title, description, bundleTitle, pathname, id } = validResults[i];
-      results.push({
-        title: highlightText(term, title, 'title'),
-        description: highlightText(term, description, 'description'),
-        bundleTitle,
-        pathname,
-        id,
-      });
-    }
+    results = validResults.slice(0, 10).map(({ title, description, bundleTitle, pathname, id, source }) => ({
+      title: highlightText(term, title, 'title'),
+      description: highlightText(term, description, 'description'),
+      bundleTitle,
+      pathname,
+      id,
+      source,
+    }));
 
     resultCache[cacheKey] = results;
     return results;

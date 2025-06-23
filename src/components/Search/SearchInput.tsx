@@ -1,27 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import debounce from 'lodash/debounce';
-import { Bullseye } from '@patternfly/react-core/dist/dynamic/layouts/Bullseye';
-import { Menu, MenuContent, MenuFooter, MenuGroup, MenuItem, MenuList } from '@patternfly/react-core/dist/dynamic/components/Menu';
+import classNames from 'classnames';
+import { Menu, MenuFooter } from '@patternfly/react-core/dist/dynamic/components/Menu';
 import { SearchInput as PFSearchInput, SearchInputProps } from '@patternfly/react-core/dist/dynamic/components/SearchInput';
-import { Spinner } from '@patternfly/react-core/dist/dynamic/components/Spinner';
 import { Popper } from '@patternfly/react-core/dist/dynamic/helpers/Popper/Popper';
 
 import './SearchInput.scss';
 
-import EmptySearchState from './EmptySearchState';
 import { useSegment } from '../../analytics/useSegment';
 import useWindowWidth from '../../hooks/useWindowWidth';
-import ChromeLink from '../ChromeLink';
-import SearchTitle from './SearchTitle';
-import SearchDescription from './SearchDescription';
-import { useAtomValue } from 'jotai';
-import { asyncLocalOrama } from '../../state/atoms/localSearchAtom';
-import { localQuery } from '../../utils/localSearch';
-import { isPreviewAtom } from '../../state/atoms/releaseAtom';
-import { ReleaseEnv } from '../../@types/types.d';
-import type { SearchItem } from './SearchTypes';
 import SearchFeedback, { SearchFeedbackType } from './SearchFeedback';
-import useFeoConfig from '../../hooks/useFeoConfig';
+import SearchMenuContent from './SearchMenuContent';
+import { useSearchLogic } from './useSearchLogic';
 
 export type SearchInputprops = {
   isExpanded?: boolean;
@@ -46,23 +36,19 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [currentFeedbackType, setcurrentFeedbackType] = useState<SearchFeedbackType>();
-  const [isFetching, setIsFetching] = useState(false);
-  const [searchItems, setSearchItems] = useState<SearchItem[]>([]);
-  const isPreview = useAtomValue(isPreviewAtom);
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
   const { ready, analytics } = useSegment();
   const blockCloseEvent = useRef(false);
-  const asyncLocalOramaData = useAtomValue(asyncLocalOrama);
-  const useFeoGenerated = useFeoConfig();
-
-  const debouncedTrack = useCallback(analytics ? debounce(analytics.track, 1000) : () => null, [analytics]);
-
   const isMounted = useRef(false);
   const toggleRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { md } = useWindowWidth();
 
-  const resultCount = searchItems.length;
+  const { searchItems, mcpSearchItems, mcpToolResult, isFetching, resultCount, performSearch, clearResults } = useSearchLogic();
+
+  const debouncedTrack = useCallback(analytics ? debounce(analytics.track, 1000) : () => null, [analytics]);
 
   useEffect(() => {
     if (currentFeedbackType) {
@@ -152,16 +138,23 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
 
   const handleChange: SearchInputProps['onChange'] = async (_e, value) => {
     setSearchValue(value);
-    setIsFetching(true);
-    const results = await localQuery(asyncLocalOramaData, value, isPreview ? ReleaseEnv.PREVIEW : ReleaseEnv.STABLE, useFeoGenerated);
-    setSearchItems(results ?? []);
-    isMounted.current && setIsFetching(false);
+
+    const result = await performSearch(value);
+
+    // Don't open the menu if MCP activated a quickstart
+    if (result?.mcpActivatedQuickstart) {
+      setIsOpen(false);
+      onStateChange(false);
+    } else if (resultCount > 0) {
+      // Open the menu if we have results (including mcpToolResult)
+      setIsOpen(true);
+      onStateChange(true);
+    }
+
     if (ready && analytics) {
       debouncedTrack('chrome.search-query', { query: value });
     }
   };
-
-  const [isExpanded, setIsExpanded] = React.useState(false);
 
   const onToggleExpand = (_event: React.SyntheticEvent<HTMLButtonElement>, isExpanded: boolean) => {
     setIsExpanded(!isExpanded);
@@ -176,6 +169,11 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
     return expanded;
   };
 
+  const handleMenuClose = () => {
+    setIsOpen(false);
+    onStateChange(false);
+  };
+
   const toggle = (
     <PFSearchInput
       placeholder="Search for services"
@@ -183,7 +181,7 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
       onChange={handleChange}
       onClear={(ev) => {
         setSearchValue('');
-        setSearchItems([]);
+        clearResults();
         ev.stopPropagation();
         setIsOpen(false);
         onStateChange(false);
@@ -198,65 +196,45 @@ const SearchInput = ({ onStateChange }: SearchInputListener) => {
       onClick={onInputClick}
       ref={toggleRef}
       onKeyDown={onToggleKeyDown}
-      className={isExpanded ? 'pf-u-flex-grow-1' : 'chr-c-search__collapsed'}
+      className={classNames({
+        'pf-u-flex-grow-1': isExpanded,
+        'chr-c-search__collapsed': !isExpanded,
+        'chr-c-search__loading': isFetching,
+      })}
     />
   );
 
   let menuFooter;
-  if (searchItems.length > 0 && !isFetching) {
+  if ((searchItems.length > 0 || mcpSearchItems.length > 0) && !isFetching) {
     menuFooter = (
       <MenuFooter className="pf-v6-u-px-md">
-        <SearchFeedback query={searchValue} results={searchItems} feedbackType={currentFeedbackType} onFeedbackSubmitted={setcurrentFeedbackType} />
+        <SearchFeedback
+          query={searchValue}
+          results={[...mcpSearchItems, ...searchItems]}
+          feedbackType={currentFeedbackType}
+          onFeedbackSubmitted={setcurrentFeedbackType}
+        />
       </MenuFooter>
     );
   }
 
   const menu = (
     <Menu ref={menuRef} className="pf-v6-u-pt-sm chr-c-search__menu">
-      <MenuContent>
-        <MenuList>
-          {isFetching ? (
-            <Bullseye className="pf-v6-u-p-md">
-              <Spinner size="xl" />
-            </Bullseye>
-          ) : (
-            <>
-              <MenuGroup label={searchItems.length > 0 ? `Top ${searchItems.length} results` : undefined}>
-                {searchItems.map((item, index) => (
-                  <MenuItem
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        /**
-                         * Needs pushed to the end of the execution queue to not "swallow" the event
-                         * First the navigation event must execute and
-                         *  */
-                        setTimeout(() => {
-                          setIsOpen(false);
-                        });
-                      }
-                    }}
-                    key={index}
-                    className="pf-v6-u-mb-xs"
-                    component={(props) => <ChromeLink {...props} href={item.pathname} />}
-                  >
-                    <SearchTitle title={item.title} bundleTitle={item.bundleTitle.replace(/(\[|\])/gm, '')} className="pf-v6-u-mb-xs" />
-                    <SearchDescription description={item.description} />
-                  </MenuItem>
-                ))}
-              </MenuGroup>
-            </>
-          )}
-          {searchItems.length === 0 && !isFetching && <EmptySearchState />}
-        </MenuList>
-      </MenuContent>
+      <SearchMenuContent
+        searchItems={searchItems}
+        mcpSearchItems={mcpSearchItems}
+        mcpToolResult={mcpToolResult}
+        isFetching={isFetching}
+        onMenuClose={handleMenuClose}
+      />
       {menuFooter}
     </Menu>
   );
 
   return (
     <div ref={containerRef} className="pf-v6-c-search-input pf-v6-u-w-100 pf-v6-u-align-content-center">
-      {!md && <Popper trigger={toggle} popper={menu} appendTo={containerRef.current || undefined} isVisible={isOpen} />}
-      {md && <Popper trigger={toggle} popper={menu} appendTo={containerRef.current || undefined} isVisible={isOpen} />}
+      {!md && <Popper trigger={toggle} popper={menu} appendTo={containerRef.current || undefined} isVisible={isOpen && !isFetching} />}
+      {md && <Popper trigger={toggle} popper={menu} appendTo={containerRef.current || undefined} isVisible={isOpen && !isFetching} />}
     </div>
   );
 };

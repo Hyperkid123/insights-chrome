@@ -158,6 +158,9 @@ const commonConfig = ({ dev }) => {
         isChrome: true,
         frontendCRDPath: path.resolve(__dirname, '../frontend.yml'),
         routes: {
+          '/api/quickstarts': {
+            host: 'http://localhost:8000',
+          },
           ...(process.env.CHROME_SERVICE && {
             // web sockets
             '/wss/chrome-service/': {

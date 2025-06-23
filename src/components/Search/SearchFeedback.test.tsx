@@ -13,6 +13,7 @@ describe('SearchFeedback', () => {
   beforeEach(() => {
     results = [
       {
+        id: '1',
         title: 'foo',
         bundleTitle: 'foobundle',
         description: 'Foo service',
